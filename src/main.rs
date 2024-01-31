@@ -8,7 +8,7 @@
 use std::{env, fs, os::unix::fs::PermissionsExt, path::PathBuf};
 
 use error::MyError;
-use log::{error, info};
+use log::{error, info, trace};
 use regex::Regex;
 
 mod cli;
@@ -38,6 +38,7 @@ lazy_static::lazy_static! {
 }
 
 fn main() -> Result<(), MyError> {
+  let _cli = utils::setup()?;
   create_static_directories()?;
 
   // Regular Expressions
@@ -46,7 +47,6 @@ fn main() -> Result<(), MyError> {
   )?;
   let geo_regexp = Regex::new(r"^xoff=-?[0-9]+\nyoff=-?[0-9]+\nwidth=?[0-9]+\nheight=?[0-9]+$")?;
 
-  let _cli = utils::setup()?;
   Ok(())
 }
 
@@ -54,17 +54,10 @@ fn main() -> Result<(), MyError> {
 fn create_static_directories() -> Result<(), MyError> {
   for d in [&*HIDE_DIR, &*CLASS_DIR, &*GEO_DIR, &*WID_DIR] {
     fs::create_dir_all(d)?;
+    trace!("Created directory: {}", d.to_str().unwrap());
     let perms = std::fs::Permissions::from_mode(0o700);
+    trace!("with perms: {:?}", perms);
     fs::set_permissions(d, perms)?;
   }
   Ok(())
-}
-
-#[test]
-fn test_regex() {
-  let test_wm = "Openbox";
-  let test_geo = "xoff=-10\nyoff=20\nwidth=300\nheight=400";
-  println!("Is '{}' a floating WM? {}", test_wm, FLOATING_WMS_REGEXP.is_match(test_wm));
-  println!("Is '{}' a valid geometry config? {}", test_geo, GEO_REGEXP.is_match(test_geo));
-  assert!(false);
 }
